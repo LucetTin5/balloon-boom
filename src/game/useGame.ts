@@ -11,13 +11,16 @@ export const useGame = (n: number) => {
   const [status, setStatus] = useState<GameStatus>(GameStatus.PLAYING);
   const [error, setError] = useState<string>('');
 
-  const handleClickBalloon = (rowIndex: number, colIndex: number): void => {
-    gameRef.current.clickBalloon(rowIndex, colIndex);
+  const handleClickBalloon = useCallback(
+    (rowIndex: number, colIndex: number): void => {
+      gameRef.current.clickBalloon(rowIndex, colIndex);
 
-    setBoard(gameRef.current.getBoard());
-    setStatus(gameRef.current.status);
-    setError(gameRef.current.error);
-  };
+      setBoard(gameRef.current.getBoard());
+      setStatus(gameRef.current.status);
+      setError(gameRef.current.error);
+    },
+    [],
+  );
 
   const restart = useCallback(() => {
     gameRef.current = new BalloonGame(createInitialBoard(n));
