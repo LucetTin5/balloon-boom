@@ -12,13 +12,16 @@ interface GameBoardProps {
 export const GameBoard = memo(
   ({ board, status, onClickBalloon }: GameBoardProps) => {
     return (
-      <div className="min-w-[800px] min-h-[800px] p-10 flex flex-col items-center justify-center">
-        {board.map((row, rowIndex) => (
-          <div
-            className={`flex ${status !== GameStatus.PLAYING ? 'cursor-not-allowed blur-sm' : ''}`}
-            key={rowIndex}
-          >
-            {row.map((cell, colIndex) => (
+      <div className="w-full max-w-[800px] aspect-square p-4 sm:p-10 flex flex-col items-center justify-center">
+        <div
+          className={`w-full h-full grid ${status !== GameStatus.PLAYING ? 'cursor-not-allowed blur-md' : ''}`}
+          style={{
+            gridTemplateColumns: `repeat(${board.length}, 1fr)`,
+            gridTemplateRows: `repeat(${board.length}, 1fr)`,
+          }}
+        >
+          {board.map((row, rowIndex) =>
+            row.map((cell, colIndex) => (
               <GameCell
                 key={`${rowIndex},${colIndex}`}
                 isActive={cell}
@@ -26,9 +29,9 @@ export const GameBoard = memo(
                 colIndex={colIndex}
                 onClick={onClickBalloon}
               />
-            ))}
-          </div>
-        ))}
+            )),
+          )}
+        </div>
       </div>
     );
   },
