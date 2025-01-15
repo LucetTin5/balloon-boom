@@ -8,7 +8,6 @@ export class BalloonGame {
   #error: string;
   #currentMaxGroupSize: number;
   #groups: Group[];
-  #positionsToGroupIndex: Map<string, number>;
 
   constructor(initialBoard: boolean[][]) {
     this.#board = initialBoard.map((row) => row.slice());
@@ -19,13 +18,6 @@ export class BalloonGame {
     this.#groups = this.#findAllGroups();
     this.#groups.sort((a, b) => b.size - a.size);
     this.#currentMaxGroupSize = this.#groups[0].size;
-
-    this.#positionsToGroupIndex = new Map();
-    this.#groups.forEach((group, index) => {
-      group.cells.forEach(([row, col]) => {
-        this.#positionsToGroupIndex.set(`${row},${col}`, index);
-      });
-    });
   }
 
   get status() {
@@ -50,9 +42,11 @@ export class BalloonGame {
       return;
     }
 
-    const clickedGroupIndex = this.#positionsToGroupIndex.get(`${row},${col}`);
+    const clickedGroupIndex = this.#groups.findIndex((group) =>
+      group.cells.some(([r, c]) => r === row && c === col),
+    );
 
-    if (!clickedGroupIndex) {
+    if (clickedGroupIndex === -1) {
       return;
     }
 
@@ -123,7 +117,6 @@ export class BalloonGame {
   #popGroup(group: Group, groupIndex: number) {
     group.cells.forEach(([row, col]) => {
       this.#board[row][col] = false;
-      this.#positionsToGroupIndex.delete(`${row},${col}`);
     });
 
     this.#groups.splice(groupIndex, 1);
