@@ -1,17 +1,31 @@
 import { ERROR_MSGS } from './errors';
-import { GameStatus } from './types';
+import { Cell, GameStatus, Group } from './types';
 
 export class BalloonGame {
   #board: boolean[][];
   readonly #size: number;
   #status: GameStatus;
   #error: string;
+  #currentMaxGroupSize: number;
+  #groups: Group[];
+  #positionsToGroupIndex: Map<string, number>;
 
   constructor(initialBoard: boolean[][]) {
     this.#board = initialBoard.map((row) => row.slice());
     this.#size = this.#board.length;
     this.#status = GameStatus.PLAYING;
     this.#error = '';
+
+    this.#groups = this.#findAllGroups();
+    this.#groups.sort((a, b) => b.size - a.size);
+    this.#currentMaxGroupSize = this.#groups[0].size;
+
+    this.#positionsToGroupIndex = new Map();
+    this.#groups.forEach((group, index) => {
+      group.cells.forEach(([row, col]) => {
+        this.#positionsToGroupIndex.set(`${row},${col}`, index);
+      });
+    });
   }
 
   get status() {
@@ -36,37 +50,29 @@ export class BalloonGame {
       return;
     }
 
-    const allGroups = this.#findAllGroups();
-    const maxGroupSize = Math.max(...allGroups.map((group) => group.size));
+    const clickedGroupIndex = this.#positionsToGroupIndex.get(`${row},${col}`);
 
-    const clickedGroup = this.#findGroupByPosition(row, col);
-
-    if (!clickedGroup) {
+    if (!clickedGroupIndex) {
       return;
     }
 
-    if (clickedGroup.size < maxGroupSize) {
+    const clickedGroup = this.#groups[clickedGroupIndex];
+
+    if (clickedGroup.size < this.#currentMaxGroupSize) {
       this.#error = ERROR_MSGS.SMALLER_GROUP_SELECTED;
       this.#status = GameStatus.LOST;
       return;
     }
 
     this.#error = '';
-    this.#popGroup(clickedGroup.cells);
-
-    const remainingBalloons = this.#board.some((row) =>
-      row.some((cell) => cell),
-    );
-    if (!remainingBalloons) {
-      this.#status = GameStatus.WON;
-    }
+    this.#popGroup(clickedGroup, clickedGroupIndex);
   }
 
   #findAllGroups() {
     const visited = Array.from({ length: this.#size }, () =>
       Array(this.#size).fill(false),
     );
-    const groups: Array<{ size: number; cells: Array<[number, number]> }> = [];
+    const groups: Group[] = [];
 
     for (let row = 0; row < this.#size; row++) {
       for (let col = 0; col < this.#size; col++) {
@@ -80,22 +86,9 @@ export class BalloonGame {
     return groups;
   }
 
-  #findGroupByPosition(row: number, col: number) {
-    if (!this.#isValidPosition(row, col) || !this.#board[row][col]) {
-      return null;
-    }
-
-    const visited = Array.from({ length: this.#size }, () =>
-      Array(this.#size).fill(false),
-    );
-    const groupCells = this.#bfs(row, col, visited);
-
-    return { size: groupCells.length, cells: groupCells };
-  }
-
   #bfs(startRow: number, startCol: number, visited: boolean[][]) {
-    const queue: Array<[number, number]> = [];
-    const result: Array<[number, number]> = [];
+    const queue: Cell[] = [];
+    const result: Cell[] = [];
     const directions = [
       [1, 0],
       [-1, 0],
@@ -127,10 +120,22 @@ export class BalloonGame {
     return result;
   }
 
-  #popGroup(cells: Array<[number, number]>) {
-    cells.forEach(([row, col]) => {
+  #popGroup(group: Group, groupIndex: number) {
+    group.cells.forEach(([row, col]) => {
       this.#board[row][col] = false;
+      this.#positionsToGroupIndex.delete(`${row},${col}`);
     });
+
+    this.#groups.splice(groupIndex, 1);
+
+    if (this.#groups.length === 0) {
+      this.#status = GameStatus.WON;
+      return;
+    }
+
+    if (groupIndex === 0) {
+      this.#currentMaxGroupSize = this.#groups[0].size;
+    }
   }
 
   #isValidPosition(row: number, col: number): boolean {
