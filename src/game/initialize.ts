@@ -3,5 +3,7 @@ const createBalloonCell = () => {
 };
 
 export const createInitialBoard = (width: number) => {
-  return Array.from({ length: width }, () => Array.from({ length: width }, createBalloonCell));
+  return Array.from({ length: width }, () =>
+    Array.from({ length: width }, createBalloonCell),
+  );
 };
