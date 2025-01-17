@@ -26,6 +26,7 @@ const App = () => {
         <div className="w-full flex flex-col items-center justify-center relative">
           <GameBoard
             board={board}
+            boardWidth={boardWidth}
             status={status}
             onClickBalloon={handleClickBalloon}
           />
